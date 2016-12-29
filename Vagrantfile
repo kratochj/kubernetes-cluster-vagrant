@@ -7,6 +7,25 @@ $num_instances = 3
 Vagrant.configure("2") do |config|
   config.vm.box = "centos/7"
   
+  # Create storage (NFS server)
+  config.vm.define "storage"  do |config|
+      config.vm.hostname = "storage"
+      config.vm.network "private_network", ip: "192.168.50.50"
+
+      config.vm.provision "shell", privileged: true, env: {"HOSTNAME" => config.vm.hostname}, inline: <<-SHELL
+        yum -y install nfs-utils
+        mkdir -p /shared/kubernetes/storage01
+        mkdir -p /shared/kubernetes/storage02
+        echo "/shared 192.168.50.0/24(rw,sync,no_root_squash,no_all_squash)" >> /etc/exports
+
+        for SERVICES in rpcbind nfs-server; do
+          systemctl enable $SERVICES
+          systemctl restart $SERVICES
+        done
+    SHELL
+ end
+  
+  
   # Create k8s-master
   config.vm.define "master"  do |config|
       config.vm.hostname = "master"
@@ -18,7 +37,7 @@ Vagrant.configure("2") do |config|
       config.vm.provision "shell", privileged: true, env: {"HOSTNAME" => config.vm.hostname}, inline: <<-SHELL
         systemctl stop firewalld
         systemctl disable firewalld
-        yum -y install ntp
+        yum -y install ntp nfs-utils
         systemctl start ntpd
         systemctl enable ntpd
         yum -y install etcd kubernetes;
@@ -49,7 +68,7 @@ Vagrant.configure("2") do |config|
         config.vm.provision "shell", privileged: true, env: {"KUBELET_CONFIG_LINE" => kubelet_config_line}, inline: <<-SHELL
           systemctl stop firewalld
           systemctl disable firewalld
-          yum -y install ntp
+          yum -y install ntp nfs-utils
           systemctl start ntpd
           systemctl enable ntpd
           
@@ -71,7 +90,10 @@ Vagrant.configure("2") do |config|
 
         SHELL
        end
-
-
   end
+  
+  
+  
+  
+  
 end

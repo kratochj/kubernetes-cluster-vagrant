@@ -11,7 +11,7 @@ This is example how to easily install Kubernetes cluster with Vagrant. By defaul
 
 Run `vagrant` command to spin machines up:
 
-	vagrant up 
+	$ vagrant up 
 
 
 ...wait couple of minutes...
@@ -25,8 +25,8 @@ Steps in this section should be performed on Kubernetes master (or Kubernete cli
 ### 1. Create Persistent Volumes
 
 ```
-kubectl create -f https://raw.githubusercontent.com/kratochj/kubernetes-cluster-vagrant/master/pods/nfs-db.yaml
-kubectl create -f https://raw.githubusercontent.com/kratochj/kubernetes-cluster-vagrant/master/pods/nfs-web.yaml
+$ kubectl create -f https://raw.githubusercontent.com/kratochj/kubernetes-cluster-vagrant/master/pods/nfs-db.yaml
+$ kubectl create -f https://raw.githubusercontent.com/kratochj/kubernetes-cluster-vagrant/master/pods/nfs-web.yaml
 ```
 
 Check whether volumes were created:
@@ -40,8 +40,8 @@ pv5gweb   5Gi        RWX           Available                       1m
 ### 2. Create Persistent Volume Claims
 
 ```
-kubectl create -f https://raw.githubusercontent.com/kratochj/kubernetes-cluster-vagrant/master/pods/claim-db.yaml
-kubectl create -f https://raw.githubusercontent.com/kratochj/kubernetes-cluster-vagrant/master/pods/claim-web.yaml
+$ kubectl create -f https://raw.githubusercontent.com/kratochj/kubernetes-cluster-vagrant/master/pods/claim-db.yaml
+$ kubectl create -f https://raw.githubusercontent.com/kratochj/kubernetes-cluster-vagrant/master/pods/claim-web.yaml
 ```
 
 Check volumes and claims:
@@ -62,7 +62,7 @@ Now we are ready to deploy application cluster.
 MySQL is the backend for the Wordpress. We need to create a definition file called mysql-pod.yaml. Before that, we need create password file and import password from that file into k8s secure store. Make sure password.txt does not have a trailing newline
 
 ```
-kubectl create secret generic mysql-pass --from-file=password.txt
+$ kubectl create secret generic mysql-pass --from-file=password.txt
 ```
 
 ... and then  deploy:
@@ -91,13 +91,20 @@ spec:
 deploy it: 
 
 ```
-kubectl create -f https://raw.githubusercontent.com/kratochj/kubernetes-cluster-vagrant/master/pods/mysql-service.yaml
+$ kubectl create -f https://raw.githubusercontent.com/kratochj/kubernetes-cluster-vagrant/master/pods/mysql-service.yaml
 ```
 
 Here is how to check if everything is deployed:
 ```
 $ kubectl get pods,services
+NAME             READY          STATUS              RESTARTS   AGE
+po/mysql         0/1            ContainerCreating   0          29s
+NAME             CLUSTER-IP     EXTERNAL-IP         PORT(S)    AGE
+svc/kubernetes   10.254.0.1     <none>              443/TCP    1h
+svc/mysql        10.254.10.20   <none>              3306/TCP   17s
 ```
+
+Check IP address for the mysql service must match the clusterIP defined inside mysql-service.yaml. We are going to use that IP address as MySQL host for the Wordpress pods as described in the next section.
 
 
 
